@@ -1,0 +1,272 @@
+import {
+  Container,
+  Typography,
+  Button,
+  Box,
+  SvgIcon,
+  Grid,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  Dialog,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+} from "@mui/material";
+import { useState } from "react";
+import DataTable from "../components/DataTable";
+import styled from "@emotion/styled";
+import { importDataFromFileAsync } from "../utils/data";
+import Backdrop from "@mui/material/Backdrop";
+import CircularProgress from "@mui/material/CircularProgress";
+import Checkbox from "@mui/material/Checkbox";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "../db";
+import ProxyInput from "../components/ProxyInput";
+import {
+  mdiArrowRight,
+  mdiDeleteOutline,
+  mdiImport,
+  mdiInformation,
+  mdiInformationOutline,
+} from "@mdi/js";
+import LoginButton from "../components/LoginButton";
+import StatusText from "../components/StatusText";
+import { SnackbarProvider, VariantType, useSnackbar } from "notistack";
+
+export default function HomePage() {
+  const [importing, setImporting] = useState(false);
+  const [reloadTime, setReloadTime] = useState(0);
+  const [contextMenuData, setAnchorPosition] = useState<
+    { x: number; y: number; row: TiktokAccount } | undefined
+  >(undefined);
+  const [deleted, setDeleted] = useState<TiktokAccount | undefined>(undefined);
+  const data = useLiveQuery(() => db.tiktoks.toArray(), [reloadTime]);
+  const { enqueueSnackbar } = useSnackbar();
+
+  return (
+    <Root>
+      <Grid container>
+        <Grid item sm={12} md="auto" p={2}>
+          <ProxyInput />
+        </Grid>
+        <Grid
+          item
+          sm={12}
+          md
+          p={2}
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "flex-end",
+          }}
+        >
+          <Button
+            component="label"
+            variant="contained"
+            color="secondary"
+            size="small"
+            startIcon={
+              <SvgIcon fontSize="inherit">
+                <path d={mdiImport} />
+              </SvgIcon>
+            }
+          >
+            Import data
+            <input
+              hidden
+              type="file"
+              name="import_file"
+              onChange={(e) => {
+                const file = e.currentTarget.files[0];
+                if (file) {
+                  e.currentTarget.value = "";
+
+                  setImporting(true);
+                  importDataFromFileAsync(file)
+                    .then((arr) => {
+                      enqueueSnackbar({
+                        variant: "success",
+                        message: `Import thành công ${arr.length} tài khoản.`,
+                      });
+                    })
+                    .catch((err) => {
+                      enqueueSnackbar({
+                        variant: "error",
+                        message: err.message,
+                      });
+                    })
+                    .finally(() => {
+                      setReloadTime(Date.now());
+                      setImporting(false);
+                    });
+                }
+              }}
+            />
+          </Button>
+        </Grid>
+      </Grid>
+
+      {data ? (
+        <DataTable
+          dataSource={data}
+          columns={[
+            // {
+            //   key: "select",
+            //   title: () =>{
+            //     return <Checkbox onChange={(e, checked) =>{
+
+            //     }} />
+            //   },
+            //   align: "right",
+            //   render: (row, rowIdx) => <Typography>{rowIdx + 1}</Typography>,
+            // },
+            {
+              key: "NO",
+              title: "NO.",
+              align: "right",
+              render: (row, rowIdx) => <Typography>{rowIdx + 1}</Typography>,
+            },
+            {
+              key: "email",
+              title: "Email",
+              render: (row, rowIdx) => <Typography>{row.email}</Typography>,
+            },
+            {
+              key: "currency",
+              title: "Currency",
+              align: "center",
+              render: (row, rowIdx) => <Typography>{row.currency}</Typography>,
+            },
+            {
+              key: "2FA",
+              title: "2FA",
+              align: "center",
+              render: (row, rowIdx) => (
+                <Checkbox
+                  checked={row.twoFaEnabled}
+                  size="small"
+                  disableRipple
+                  sx={{ cursor: "inherit" }}
+                />
+              ),
+            },
+            // {
+            //   key: "2fa_secret",
+            //   title: "2FA Secret",
+            //   render: (row, rowIdx) => <Typography>{row.secret}</Typography>,
+            // },
+
+            {
+              key: "status",
+              title: "Status",
+              align: "center",
+              render: (row, rowIdx) => <StatusText uid={row.uid} />,
+            },
+            {
+              key: "action",
+              title: "Action",
+              align: "center",
+              render: (row, rowIdx) => <LoginButton account={row} />,
+            },
+          ]}
+          rowKey={(row) => row.email}
+          onRowContextMenu={(ev, row) => {
+            setAnchorPosition({
+              row,
+              x: ev.pageX,
+              y: ev.pageY,
+            });
+          }}
+        />
+      ) : null}
+      <Backdrop
+        sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
+        open={importing || !data}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
+      <Menu
+        MenuListProps={{
+          dense: true,
+        }}
+        onClose={() => {
+          setAnchorPosition(undefined);
+        }}
+        open={!!contextMenuData}
+        anchorReference="anchorPosition"
+        onContextMenu={() => {
+          setAnchorPosition(undefined);
+        }}
+        anchorPosition={
+          contextMenuData
+            ? {
+                top: contextMenuData?.y ?? 0,
+                left: contextMenuData?.x ?? 0,
+              }
+            : undefined
+        }
+      >
+        {/* <MenuItem>
+          <ListItemIcon>
+            <SvgIcon>
+              <path d={mdiInformationOutline} />
+            </SvgIcon>
+          </ListItemIcon>
+          <Typography>Show information</Typography>
+        </MenuItem> */}
+        <MenuItem
+          sx={{
+            minWidth: 128,
+            pl: 1,
+            pr: 1,
+          }}
+          onClick={() => {
+            setDeleted(contextMenuData?.row);
+            setAnchorPosition(undefined);
+          }}
+        >
+          <ListItemIcon>
+            <SvgIcon>
+              <path d={mdiDeleteOutline} />
+            </SvgIcon>
+          </ListItemIcon>
+          <Typography>Delete</Typography>
+        </MenuItem>
+      </Menu>
+      <Dialog open={!!deleted}>
+        <DialogContent>
+          Do you want to delete <b>{deleted?.email}</b>?
+        </DialogContent>
+        <DialogActions>
+          <Button
+            size="small"
+            variant="contained"
+            onClick={() => {
+              setDeleted(undefined);
+            }}
+          >
+            No
+          </Button>
+          <Button
+            size="small"
+            color="error"
+            variant="outlined"
+            onClick={() => {
+              setDeleted(undefined);
+              db.deleteAsync(deleted.uid).then(() => setReloadTime(Date.now()));
+            }}
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Root>
+  );
+}
+
+const Root = styled.div`
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+`;
