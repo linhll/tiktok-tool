@@ -4,11 +4,16 @@ import { BrowserWindow, IpcMainEvent, app } from "electron";
 const puppeteer = require("puppeteer-core");
 const twofactor = require("node-2fa");
 
+// const TIKTOK_ADS_LOGIN_URL = "https://google.com";
 const TIKTOK_ADS_LOGIN_URL =
   "https://ads.tiktok.com/i18n/common_pages/guide_page/account_status";
 
 export async function getBrowserAsync() {
   return await pie.connect(app, puppeteer);
+}
+
+function delay(time: number) {
+  return new Promise((resolve) => setTimeout(resolve, time));
 }
 
 export async function loginTiktokAds(
@@ -32,6 +37,7 @@ export async function loginTiktokAds(
         window.webContents.addListener(
           "login",
           (ev, authRes, authInfo, callback) => {
+            console.log("authInfo", authInfo);
             if (proxy.auth) {
               if (authInfo.host === ip && authInfo.port === +port) {
                 const [username, password] = proxy.auth.split(":");
@@ -43,21 +49,27 @@ export async function loginTiktokAds(
           }
         );
 
-        console.log("proxy", proxy);
+        console.log("proxy", `${proxy.protocol}://${proxy.address}`);
 
         await window.webContents.session.setProxy({
-          proxyRules: `${proxy.protocol}=${proxy.address}`,
-        });
-      } else {
-        await window.webContents.session.setProxy({
-          proxyRules: ``,
+          proxyRules: `${proxy.protocol}://${proxy.address}`,
         });
       }
-      try {
-        await window.loadURL(TIKTOK_ADS_LOGIN_URL);
-      } catch (e) {
-        if (e.code !== "ERR_ABORTED") {
-          throw e;
+      for (let i = 0; i < 5; i++) {
+        try {
+          await window.loadURL(TIKTOK_ADS_LOGIN_URL);
+
+          break;
+        } catch (e) {
+          console.log(e.code);
+          if (e.code === "ERR_CONNECTION_RESET") {
+            await delay(1000);
+            continue;
+          }
+          if (e.code !== "ERR_ABORTED") {
+            throw e;
+          }
+          break;
         }
       }
 

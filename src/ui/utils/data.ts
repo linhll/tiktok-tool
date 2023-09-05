@@ -8,32 +8,53 @@ export async function importDataFromFileAsync(
     .then((text) => {
       const lines = text.split(/\r\n?/);
       return lines.map((line) => {
-        const [
-          email,
-          email_password,
-          payment,
-          password,
-          twoFaEnabledStr,
-          currency,
-          temp,
-          uid,
-          secret,
-        ] = line.split("|");
+        if (!line.trim()) {
+          return undefined;
+        }
+        const splited = line.split("|");
+        if (splited[2] === "Auto") {
+          const [
+            email,
+            email_password,
+            payment,
+            password,
+            twoFaEnabledStr,
+            currency,
+            temp,
+            uid,
+            secret,
+          ] = splited;
+          return {
+            email,
+            email_password,
+            payment,
+            password,
+            twoFaEnabled: !!secret,
+            currency,
+            uid,
+            secret,
+          };
+        }
+        const [email, email_password, password, secret, uid, currency] =
+          splited;
         return {
           email,
           email_password,
-          payment,
+          payment: "Auto",
           password,
-          twoFaEnabled: twoFaEnabledStr === "Đã Bật 2FA",
+          twoFaEnabled: !!secret,
           currency,
           uid,
           secret,
         };
       });
     })
+    .then((arr) => arr.filter((item) => !!item))
     .then(async (accounts) => {
       for (const account of accounts) {
-        await db.addOrUpdateTiktok(account);
+        if (account) {
+          await db.addOrUpdateTiktok(account);
+        }
       }
       return accounts;
     });

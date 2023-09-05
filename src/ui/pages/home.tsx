@@ -13,7 +13,7 @@ import {
   DialogContentText,
   DialogActions,
 } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DataTable from "../components/DataTable";
 import styled from "@emotion/styled";
 import { importDataFromFileAsync } from "../utils/data";
@@ -29,19 +29,29 @@ import {
   mdiImport,
   mdiInformation,
   mdiInformationOutline,
+  mdiTrashCanOutline,
 } from "@mdi/js";
 import LoginButton from "../components/LoginButton";
 import StatusText from "../components/StatusText";
 import { SnackbarProvider, VariantType, useSnackbar } from "notistack";
 
 export default function HomePage() {
-  const [importing, setImporting] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [reloadTime, setReloadTime] = useState(0);
   const [contextMenuData, setAnchorPosition] = useState<
     { x: number; y: number; row: TiktokAccount } | undefined
   >(undefined);
   const [deleted, setDeleted] = useState<TiktokAccount | undefined>(undefined);
-  const data = useLiveQuery(() => db.tiktoks.toArray(), [reloadTime]);
+  const [data, setData] = useState<TiktokAccount[]>([]);
+  useEffect(() => {
+    setLoading(true);
+    db.tiktoks
+      .toArray()
+      .then(setData)
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [reloadTime]);
   const { enqueueSnackbar } = useSnackbar();
 
   return (
@@ -82,7 +92,7 @@ export default function HomePage() {
                 if (file) {
                   e.currentTarget.value = "";
 
-                  setImporting(true);
+                  setLoading(true);
                   importDataFromFileAsync(file)
                     .then((arr) => {
                       enqueueSnackbar({
@@ -98,11 +108,37 @@ export default function HomePage() {
                     })
                     .finally(() => {
                       setReloadTime(Date.now());
-                      setImporting(false);
+                      setLoading(false);
                     });
                 }
               }}
             />
+          </Button>
+          <Button
+            variant="outlined"
+            size="small"
+            sx={{ ml: 1 }}
+            color="error"
+            onClick={(e) => {
+              const res = confirm(
+                "This action cannot reverse. Do you want to clear all data?"
+              );
+              if (res) {
+                setLoading(true);
+
+                db.tiktoks.clear().finally(() => {
+                  setLoading(false);
+                  setReloadTime(Date.now());
+                });
+              }
+            }}
+            startIcon={
+              <SvgIcon>
+                <path d={mdiTrashCanOutline} />
+              </SvgIcon>
+            }
+          >
+            Clear Data
           </Button>
         </Grid>
       </Grid>
@@ -180,9 +216,24 @@ export default function HomePage() {
           }}
         />
       ) : null}
+      <Box
+        sx={{
+          background: (theme) => theme.palette.primary.main,
+          p: 0.5,
+          pl: 1,
+        }}
+      >
+        <Typography
+          fontFamily="monospace"
+          fontSize={12}
+          color={(theme) => theme.palette.common.white}
+        >
+          Total: <b>{data.length}</b> accounts
+        </Typography>
+      </Box>
       <Backdrop
         sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
-        open={importing || !data}
+        open={loading || !data}
       >
         <CircularProgress color="inherit" />
       </Backdrop>

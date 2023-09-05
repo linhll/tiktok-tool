@@ -1,7 +1,7 @@
 {
   "name": "auto-login",
   "productName": "Tiktok Tool",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "Tiktok tool",
   "main": ".webpack/main",
   "scripts": {
