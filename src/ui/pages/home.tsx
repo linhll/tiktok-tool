@@ -197,7 +197,9 @@ export default function HomePage() {
               key: "status",
               title: "Status",
               align: "center",
-              render: (row, rowIdx) => <StatusText uid={row.uid} />,
+              render: (row, rowIdx) => (
+                <StatusText uid={row.uid} initStatus={row.status} />
+              ),
             },
             {
               key: "action",

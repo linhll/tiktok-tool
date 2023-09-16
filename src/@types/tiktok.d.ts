@@ -7,6 +7,7 @@ interface TiktokAccount {
   currency: string;
   uid: string;
   secret: string;
+  status?: string;
 }
 
 interface LoginTiktokStatusEventPayload {
@@ -14,4 +15,5 @@ interface LoginTiktokStatusEventPayload {
   error?: any;
   success?: boolean;
   pending?: boolean;
+  action?: string;
 }

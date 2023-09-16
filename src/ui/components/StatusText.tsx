@@ -1,14 +1,14 @@
 import { Typography } from "@mui/material";
 import { IpcRendererEvent } from "electron";
 import { useEffect, useState } from "react";
+import { db } from "../db";
 
 type Props = {
   uid: string;
+  initStatus?: string;
 };
 export default function StatusText(props: Props) {
-  const [status, setStatus] = useState<
-    "error" | "success" | "none" | "pending"
-  >("none");
+  const [status, setStatus] = useState<string>(props.initStatus);
 
   useEffect(() => {
     const listener = (
@@ -16,17 +16,16 @@ export default function StatusText(props: Props) {
       payload: LoginTiktokStatusEventPayload
     ) => {
       if (payload.uid === props.uid) {
+        let status = "none";
         if (payload.error) {
-          setStatus("error");
-          return;
+          status = "error";
+        } else if (payload.success) {
+          status = "success";
+        } else if (payload.pending) {
+          status = payload.action ?? "pending";
         }
-        if (payload.success) {
-          setStatus("success");
-          return;
-        }
-        if (payload.pending) {
-          setStatus("pending");
-        }
+        db.updateStatus(props.uid, status);
+        setStatus(status);
       }
     };
     window.electronAPI.onLoginTiktokStatus(listener);

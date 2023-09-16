@@ -7,9 +7,9 @@ export class DBDexie extends Dexie {
 
   constructor() {
     super("myDatabase");
-    this.version(1).stores({
+    this.version(2).stores({
       tiktoks:
-        "uid, email, email_password, password, twoFaEnabled, payment, currency, secret",
+        "uid, email, email_password, password, twoFaEnabled, payment, currency, secret, status",
     });
   }
   async addOrUpdateTiktok(item: TiktokAccount) {
@@ -18,6 +18,13 @@ export class DBDexie extends Dexie {
       return db.tiktoks.update(item.uid, item);
     }
     return db.tiktoks.add(item, item.uid);
+  }
+
+  async updateStatus(id: string, status: string) {
+    const isExisted = !!(await db.tiktoks.get(id));
+    if (isExisted) {
+      return db.tiktoks.update(id, { status });
+    }
   }
 
   async deleteAsync(uid: string) {
