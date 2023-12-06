@@ -24,6 +24,7 @@ const config: ForgeConfig = {
   plugins: [
     new AutoUnpackNativesPlugin({}),
     new WebpackPlugin({
+      devServer: { hot: false, liveReload: true },
       mainConfig,
       renderer: {
         config: rendererConfig,

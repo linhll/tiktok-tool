@@ -8,7 +8,7 @@ type Props = {
   initStatus?: string;
 };
 export default function StatusText(props: Props) {
-  const [status, setStatus] = useState<string>(props.initStatus);
+  const [status, setStatus] = useState<string>(props.initStatus ?? "");
 
   useEffect(() => {
     const listener = (

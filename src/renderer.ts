@@ -29,3 +29,7 @@
 import "./index.css";
 
 import "./ui/App";
+
+if (!window.electronAPI) {
+  location.reload();
+}

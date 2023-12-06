@@ -4,13 +4,17 @@ import { useSelector } from "react-redux";
 import { RootState } from "../redux";
 import { useState } from "react";
 import styled from "@emotion/styled";
+import _ from "lodash";
 
 export default function LoginButton(props: { account: TiktokAccount }) {
   const [loading, setLoading] = useState(false);
-  const proxyOption = useSelector((state: RootState) => ({
-    proxy: state.config.proxy,
-    useProxy: state.config.useProxy,
-  }));
+  const proxyOption = useSelector(
+    (state: RootState) => ({
+      proxy: state.config.proxy,
+      useProxy: state.config.useProxy,
+    }),
+    _.isEqual
+  );
 
   return (
     <Root>
@@ -21,7 +25,7 @@ export default function LoginButton(props: { account: TiktokAccount }) {
           window.electronAPI
             .loginTiktokAds(
               props.account,
-              proxyOption.useProxy
+              proxyOption.useProxy && proxyOption.proxy
                 ? {
                     address: proxyOption.proxy.address || "",
                     auth: proxyOption.proxy.auth || "",

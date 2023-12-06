@@ -10,7 +10,6 @@ import {
   ListItemIcon,
   Dialog,
   DialogContent,
-  DialogContentText,
   DialogActions,
 } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -20,22 +19,14 @@ import { importDataFromFileAsync } from "../utils/data";
 import Backdrop from "@mui/material/Backdrop";
 import CircularProgress from "@mui/material/CircularProgress";
 import Checkbox from "@mui/material/Checkbox";
-import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "../db";
-import ProxyInput from "../components/ProxyInput";
-import {
-  mdiArrowRight,
-  mdiDeleteOutline,
-  mdiImport,
-  mdiInformation,
-  mdiInformationOutline,
-  mdiTrashCanOutline,
-} from "@mdi/js";
+import ProxySetting from "../components/SettingDialog/components/ProxySetting";
+import { mdiDeleteOutline, mdiImport, mdiTrashCanOutline } from "@mdi/js";
 import LoginButton from "../components/LoginButton";
 import StatusText from "../components/StatusText";
-import { SnackbarProvider, VariantType, useSnackbar } from "notistack";
+import { useSnackbar } from "notistack";
 
-export default function HomePage() {
+export default function ToolsPage() {
   const [loading, setLoading] = useState(false);
   const [reloadTime, setReloadTime] = useState(0);
   const [contextMenuData, setAnchorPosition] = useState<
@@ -57,13 +48,8 @@ export default function HomePage() {
   return (
     <Root>
       <Grid container>
-        <Grid item sm={12} md="auto" p={2}>
-          <ProxyInput />
-        </Grid>
         <Grid
           item
-          sm={12}
-          md
           p={2}
           sx={{
             display: "flex",
@@ -88,7 +74,7 @@ export default function HomePage() {
               type="file"
               name="import_file"
               onChange={(e) => {
-                const file = e.currentTarget.files[0];
+                const file = e.currentTarget.files?.[0];
                 if (file) {
                   e.currentTarget.value = "";
 
@@ -260,14 +246,6 @@ export default function HomePage() {
             : undefined
         }
       >
-        {/* <MenuItem>
-          <ListItemIcon>
-            <SvgIcon>
-              <path d={mdiInformationOutline} />
-            </SvgIcon>
-          </ListItemIcon>
-          <Typography>Show information</Typography>
-        </MenuItem> */}
         <MenuItem
           sx={{
             minWidth: 128,
@@ -306,8 +284,12 @@ export default function HomePage() {
             color="error"
             variant="outlined"
             onClick={() => {
+              if (deleted) {
+                db.deleteAsync(deleted.uid).then(() =>
+                  setReloadTime(Date.now())
+                );
+              }
               setDeleted(undefined);
-              db.deleteAsync(deleted.uid).then(() => setReloadTime(Date.now()));
             }}
           >
             Delete

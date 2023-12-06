@@ -11,8 +11,10 @@
     "outDir": "dist",
     "moduleResolution": "node",
     "resolveJsonModule": true,
+    "strict": true,
     "jsx": "react-jsx",
     "paths": {
+      "@ui/*": ["src/ui/*"],
       "*": ["node_modules/*"]
     },
     "typeRoots": ["./node_modules/@types", "./@types"]
